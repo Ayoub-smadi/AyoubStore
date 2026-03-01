@@ -1,8 +1,8 @@
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { BusMap } from "@/components/map/bus-map";
 import { Button } from "@/components/ui/button";
-import { Plus, Bus as BusIcon } from "lucide-react";
-import { useBuses, useStudents } from "@/hooks/use-data";
+import { Plus, Bus as BusIcon, UserPlus, Trash2, Edit } from "lucide-react";
+import { useBuses, useStudents, useUsers } from "@/hooks/use-data";
 import { useTranslation } from "@/hooks/use-translation";
 import { useState } from "react";
 import {
@@ -24,16 +24,21 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { apiRequest } from "@/lib/queryClient";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminBuses() {
   const { data: buses, isLoading } = useBuses();
+  const { data: users } = useUsers();
   const { t, isRtl } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [selectedBus, setSelectedBus] = useState<any>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+
+  const drivers = users?.filter(u => u.role === 'driver');
 
   const createBusMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -43,6 +48,27 @@ export default function AdminBuses() {
       queryClient.invalidateQueries({ queryKey: ["/api/buses"] });
       setOpen(false);
       toast({ title: isRtl ? "تمت إضافة الحافلة" : "Bus added successfully" });
+    }
+  });
+
+  const deleteBusMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/buses/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/buses"] });
+      toast({ title: isRtl ? "تم حذف الحافلة" : "Bus deleted" });
+    }
+  });
+
+  const assignDriverMutation = useMutation({
+    mutationFn: async ({ busId, driverId }: { busId: number, driverId: number }) => {
+      await apiRequest("PATCH", `/api/buses/${busId}/driver`, { driverId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/buses"] });
+      setAssignOpen(false);
+      toast({ title: isRtl ? "تم تعيين السائق" : "Driver assigned" });
     }
   });
 
@@ -113,14 +139,57 @@ export default function AdminBuses() {
               <div key={bus.id} className="p-4 rounded-xl border border-border/50 hover:border-primary/50 transition-colors bg-background">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold font-display text-lg text-foreground">{bus.busNumber}</h4>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                      setSelectedBus(bus);
+                      setAssignOpen(true);
+                    }}>
+                      <UserPlus className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteBusMutation.mutate(bus.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p><span className="font-semibold text-foreground/80">{isRtl ? "السائق:" : "Driver:"}</span> {bus.driverId ? drivers?.find(d => d.id === bus.driverId)?.name || `ID: ${bus.driverId}` : (isRtl ? "غير معين" : "Not Assigned")}</p>
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1
                     ${bus.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-400'}`}>
                     {bus.status}
                   </span>
                 </div>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <p><span className="font-semibold text-foreground/80">{isRtl ? "السائق:" : "Driver:"}</span> {bus.driverId ? `ID: ${bus.driverId}` : (isRtl ? "غير معين" : "Not Assigned")}</p>
-                </div>
+
+        <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{isRtl ? "تعيين سائق" : "Assign Driver"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{isRtl ? "اختر السائق" : "Select Driver"}</label>
+                <Select onValueChange={(val) => {
+                  if (selectedBus) {
+                    assignDriverMutation.mutate({ busId: selectedBus.id, driverId: Number(val) });
+                  }
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={isRtl ? "اختر سائق..." : "Select a driver..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {drivers?.map((driver) => (
+                      <SelectItem key={driver.id} value={driver.id.toString()}>
+                        {driver.name}
+                      </SelectItem>
+                    ))}
+                    {drivers?.length === 0 && (
+                      <div className="p-2 text-sm text-muted-foreground">{isRtl ? "لا يوجد سائقين" : "No drivers found"}</div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
                 {bus.status === 'active' && (
                   <Button variant="ghost" size="sm" className="w-full mt-3 bg-primary/5 text-primary hover:bg-primary/15 font-semibold rounded-lg">
                     {isRtl ? "التركيز على الخريطة" : "Focus on Map"}

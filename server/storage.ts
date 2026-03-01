@@ -7,6 +7,7 @@ export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   deleteUser(id: number): Promise<boolean>;
   
@@ -17,10 +18,15 @@ export interface IStorage {
   // Buses
   getBuses(): Promise<Bus[]>;
   updateBusLocation(id: number, lat: number, lng: number): Promise<Bus | undefined>;
+  createBus(bus: InsertBus): Promise<Bus>;
+  deleteBus(id: number): Promise<boolean>;
+  assignBusDriver(id: number, driverId: number): Promise<Bus | undefined>;
   
   // Students
   getStudents(): Promise<Student[]>;
   createStudent(student: InsertStudent): Promise<Student>;
+  updateStudentLocation(id: number, lat: number, lng: number): Promise<Student | undefined>;
+  linkStudentToBus(id: number, busId: number): Promise<Student | undefined>;
   
   // Stats
   getStats(): Promise<{
@@ -41,6 +47,10 @@ export class DatabaseStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
   async createBus(insertBus: InsertBus): Promise<Bus> {
@@ -66,12 +76,41 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(buses);
   }
 
+  async deleteBus(id: number): Promise<boolean> {
+    await db.delete(buses).where(eq(buses.id, id));
+    return true;
+  }
+
+  async assignBusDriver(id: number, driverId: number): Promise<Bus | undefined> {
+    const [bus] = await db.update(buses)
+      .set({ driverId })
+      .where(eq(buses.id, id))
+      .returning();
+    return bus;
+  }
+
   async updateBusLocation(id: number, lat: number, lng: number): Promise<Bus | undefined> {
     const [bus] = await db.update(buses)
       .set({ currentLat: lat, currentLng: lng })
       .where(eq(buses.id, id))
       .returning();
     return bus;
+  }
+
+  async updateStudentLocation(id: number, lat: number, lng: number): Promise<Student | undefined> {
+    const [student] = await db.update(students)
+      .set({ homeLat: lat, homeLng: lng })
+      .where(eq(students.id, id))
+      .returning();
+    return student;
+  }
+
+  async linkStudentToBus(id: number, busId: number): Promise<Student | undefined> {
+    const [student] = await db.update(students)
+      .set({ busId })
+      .where(eq(students.id, id))
+      .returning();
+    return student;
   }
 
   async getStudentByNumber(studentNumber: string): Promise<Student | undefined> {

@@ -101,6 +101,58 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/students/:id/location", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { homeLat, homeLng } = z.object({ homeLat: z.number(), homeLng: z.number() }).parse(req.body);
+      const student = await (storage as any).updateStudentLocation(id, homeLat, homeLng);
+      res.json(student);
+    } catch (e) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.patch("/api/students/:id/bus", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { busId } = z.object({ busId: z.number() }).parse(req.body);
+      const student = await (storage as any).linkStudentToBus(id, busId);
+      res.json(student);
+    } catch (e) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/buses/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      await (storage as any).deleteBus(id);
+      res.status(204).send();
+    } catch (e) {
+      res.status(500).json({ message: "Failed to delete bus" });
+    }
+  });
+
+  app.patch("/api/buses/:id/driver", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { driverId } = z.object({ driverId: z.number() }).parse(req.body);
+      const bus = await (storage as any).assignBusDriver(id, driverId);
+      res.json(bus);
+    } catch (e) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.get("/api/users", async (req, res) => {
+    try {
+      const allUsers = await (storage as any).getUsers();
+      res.json(allUsers);
+    } catch (e) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
   app.post("/api/users", async (req, res) => {
     try {
       const data = insertUserSchema.parse(req.body);

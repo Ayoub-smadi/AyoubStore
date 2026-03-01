@@ -1,5 +1,5 @@
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { useStudents, useCreateStudent } from "@/hooks/use-data";
+import { useStudents, useCreateStudent, useBuses } from "@/hooks/use-data";
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, UserPlus, FileDown, Search } from "lucide-react";
+import { Plus, UserPlus, FileDown, Search, MapPin, Link2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,17 +29,27 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "@/hooks/use-translation";
 import { useState } from "react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { BusMap } from "@/components/map/bus-map";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminStudents() {
   const { data: students, isLoading } = useStudents();
+  const { data: buses } = useBuses();
   const createStudent = useCreateStudent();
   const { t, isRtl } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
 
   const form = useForm({
     resolver: zodResolver(insertStudentSchema),
@@ -48,7 +58,31 @@ export default function AdminStudents() {
       fullName: "",
       grade: "",
       schoolId: 1,
+      homeLat: 24.7136,
+      homeLng: 46.6753,
     },
+  });
+
+  const updateLocationMutation = useMutation({
+    mutationFn: async ({ id, lat, lng }: { id: number, lat: number, lng: number }) => {
+      await apiRequest("PATCH", `/api/students/${id}/location`, { homeLat: lat, homeLng: lng });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      setMapOpen(false);
+      toast({ title: isRtl ? "تم تحديث الموقع" : "Location updated" });
+    }
+  });
+
+  const linkBusMutation = useMutation({
+    mutationFn: async ({ studentId, busId }: { studentId: number, busId: number }) => {
+      await apiRequest("PATCH", `/api/students/${studentId}/bus`, { busId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      setLinkOpen(false);
+      toast({ title: isRtl ? "تم الربط بنجاح" : "Linked successfully" });
+    }
   });
 
   const onSubmit = (data: any) => {
@@ -191,14 +225,90 @@ export default function AdminStudents() {
                 <TableCell className="font-mono text-sm">{student.studentNumber}</TableCell>
                 <TableCell>{student.grade}</TableCell>
                 <TableCell>
-                  {student.parentId ? (
-                    <span className="text-emerald-500 font-medium">{isRtl ? "مرتبط" : "Linked"}</span>
+                  {student.busId ? (
+                    <span className="text-primary font-medium">Bus #{student.busId}</span>
                   ) : (
-                    <span className="text-muted-foreground text-xs italic">{isRtl ? "غير مرتبط" : "Not Linked"}</span>
+                    <span className="text-muted-foreground text-xs italic">{isRtl ? "غير معين" : "Not Assigned"}</span>
                   )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-primary"
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setMapOpen(true);
+                      }}
+                    >
+                      <MapPin className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-indigo-600"
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setLinkOpen(true);
+                      }}
+                    >
+                      <Link2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
+
+        <Dialog open={mapOpen} onOpenChange={setMapOpen}>
+          <DialogContent className="max-w-3xl h-[600px] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>{isRtl ? "تحديد موقع منزل الطالب" : "Set Student Home Location"}</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 rounded-xl overflow-hidden relative border border-border">
+              <BusMap 
+                buses={[]} 
+                onMapClick={(lat, lng) => {
+                  if (selectedStudent) {
+                    updateLocationMutation.mutate({ id: selectedStudent.id, lat, lng });
+                  }
+                }}
+              />
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-xs font-bold z-[1000] pointer-events-none">
+                {isRtl ? "اضغط على الخريطة لتحديد الموقع" : "Click map to set location"}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{isRtl ? "ربط الطالب بحافلة" : "Link Student to Bus"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{isRtl ? "اختر الحافلة" : "Select Bus"}</label>
+                <Select onValueChange={(val) => {
+                  if (selectedStudent) {
+                    linkBusMutation.mutate({ studentId: selectedStudent.id, busId: Number(val) });
+                  }
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={isRtl ? "اختر حافلة..." : "Select a bus..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {buses?.map((bus) => (
+                      <SelectItem key={bus.id} value={bus.id.toString()}>
+                        {isRtl ? "حافلة رقم" : "Bus #"} {bus.busNumber}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
             {filteredStudents?.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">

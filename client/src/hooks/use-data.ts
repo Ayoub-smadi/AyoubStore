@@ -72,6 +72,17 @@ export function useUpdateBusLocation() {
   });
 }
 
+export function useUsers() {
+  return useQuery({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch users");
+      return res.json();
+    },
+  });
+}
+
 export function useNotifications() {
   return useQuery({
     queryKey: [api.notifications.list.path],

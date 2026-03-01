@@ -38,6 +38,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => logout()}
+                className="text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Logout
+              </Button>
               <Button variant="ghost" size="icon" className="relative rounded-full w-10 h-10 bg-secondary/50 hover:bg-secondary transition-colors">
                 <Bell className="h-5 w-5 text-foreground/80" />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full animate-pulse"></span>

@@ -32,6 +32,22 @@ export const api = {
         200: z.custom<typeof users.$inferSelect>(),
         401: errorSchemas.unauthorized,
       }
+    },
+    register: {
+      method: 'POST' as const,
+      path: '/api/auth/register' as const,
+      input: insertUserSchema,
+      responses: {
+        200: z.custom<typeof users.$inferSelect>(),
+        400: errorSchemas.validation,
+      }
+    },
+    logout: {
+      method: 'POST' as const,
+      path: '/api/auth/logout' as const,
+      responses: {
+        200: z.object({ message: z.string() }),
+      }
     }
   },
   stats: {

@@ -27,6 +27,28 @@ export async function registerRoutes(
     }
   });
 
+  app.post(api.auth.register.path, async (req, res) => {
+    try {
+      const data = api.auth.register.input.parse(req.body);
+      const existing = await storage.getUserByUsername(data.username);
+      if (existing) return res.status(400).json({ message: "Username already exists" });
+      
+      const user = await storage.createUser(data);
+      res.json(user);
+    } catch (e) {
+      res.status(400).json({ message: "Invalid registration data" });
+    }
+  });
+
+  app.post(api.auth.logout.path, (req, res) => {
+    res.json({ message: "Logged out" });
+  });
+
+  app.get(api.auth.me.path, async (req, res) => {
+    // Mock session - for demo just return null or first user
+    res.status(401).send();
+  });
+
   app.get(api.stats.get.path, async (req, res) => {
     try {
       const stats = await storage.getStats();

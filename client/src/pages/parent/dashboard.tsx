@@ -1,0 +1,83 @@
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { BusMap } from "@/components/map/bus-map";
+import { Bell, MapPin, Clock, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export default function ParentDashboard() {
+  // Mock data for parent's child
+  const childBus = {
+    id: 1,
+    busNumber: "B-12",
+    currentLat: 40.7150,
+    currentLng: -74.0050,
+    status: "active"
+  };
+
+  const homeLocation: [number, number] = [40.7100, -74.0010];
+
+  return (
+    <DashboardLayout>
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold font-display text-foreground">Track Your Child</h2>
+        <p className="text-muted-foreground mt-1">Live tracking and geofence alerts for Emma Thompson.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px]">
+        {/* Info Panel */}
+        <div className="flex flex-col gap-6">
+          <div className="bg-gradient-to-br from-primary to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-primary/20">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                <MapPin className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white/80">Current Status</p>
+                <h3 className="text-2xl font-bold font-display tracking-tight">On Bus B-12</h3>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center pb-4 border-b border-white/20">
+                <span className="text-white/80 text-sm">Estimated Arrival</span>
+                <span className="font-bold flex items-center gap-1"><Clock className="w-4 h-4"/> 3:45 PM</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-white/80 text-sm">Distance to Home</span>
+                <span className="font-bold">1.2 miles</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-2xl border border-border/50 p-6 flex-1 shadow-sm">
+            <h4 className="font-bold font-display mb-4 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              Active Geofences
+            </h4>
+            <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex items-start gap-3">
+              <div className="mt-1 w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+              <div>
+                <p className="font-semibold text-sm">Home Radius (1km)</p>
+                <p className="text-xs text-muted-foreground mt-1">You will be notified when Bus B-12 enters this area.</p>
+              </div>
+            </div>
+
+            <Button variant="outline" className="w-full mt-6 border-2 font-semibold rounded-xl gap-2">
+              <Bell className="w-4 h-4" /> Manage Alert Settings
+            </Button>
+          </div>
+        </div>
+
+        {/* Map */}
+        <div className="lg:col-span-2 rounded-2xl overflow-hidden shadow-sm border border-border/50 relative z-0">
+          <BusMap 
+            buses={[childBus]} 
+            center={[40.7125, -74.0030]} 
+            zoom={14} 
+            showGeofence={true}
+            homeLocation={homeLocation}
+          />
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}

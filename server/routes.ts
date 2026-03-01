@@ -184,6 +184,27 @@ export async function registerRoutes(
     }
   });
 
+  app.get(api.parent.student.path, async (req, res) => {
+    try {
+      // In a real app, get parentId from session. For demo, we'll assume it's passed or use a default.
+      // Since this is mock auth, let's look for any student linked to a parent.
+      const allStudents = await storage.getStudents();
+      const student = allStudents.find(s => s.parentId !== null);
+      
+      if (!student) {
+        return res.status(404).json({ message: "No linked student found" });
+      }
+
+      const bus = student.busId ? (await storage.getBuses()).find(b => b.id === student.busId) || null : null;
+      const school = student.schoolId ? (await (storage as any).getSchools?.() || []).find((s: any) => s.id === student.schoolId) || null : null;
+      const driver = bus?.driverId ? (await (storage as any).getUsers?.() || []).find((u: any) => u.id === bus.driverId) || null : null;
+
+      res.json({ student, bus, driver, school });
+    } catch (e) {
+      res.status(500).json({ message: "Failed to fetch student data" });
+    }
+  });
+
   app.post("/api/buses", async (req, res) => {
     try {
       const data = insertBusSchema.parse(req.body);

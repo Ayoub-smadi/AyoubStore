@@ -50,6 +50,20 @@ export const api = {
       }
     }
   },
+  parent: {
+    student: {
+      method: 'GET' as const,
+      path: '/api/parent/student' as const,
+      responses: {
+        200: z.object({
+          student: z.custom<typeof students.$inferSelect>(),
+          bus: z.custom<typeof buses.$inferSelect>().nullable(),
+          driver: z.custom<typeof users.$inferSelect>().nullable(),
+          school: z.custom<typeof schools.$inferSelect>().nullable(),
+        })
+      }
+    }
+  },
   stats: {
     get: {
       method: 'GET' as const,

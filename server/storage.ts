@@ -53,6 +53,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
+  async getSchools(): Promise<School[]> {
+    return await db.select().from(schools);
+  }
+
   async createBus(insertBus: InsertBus): Promise<Bus> {
     const [bus] = await db.insert(buses).values(insertBus).returning();
     return bus;
@@ -149,6 +153,11 @@ export class DatabaseStorage implements IStorage {
       activeTrips: activeTripsCount
     };
   }
+
+  async getSchools(): Promise<School[]> {
+    return await db.select().from(schools);
+  }
+
   async deleteUser(id: number): Promise<boolean> {
     const user = await this.getUser(id);
     if (user?.username === 'admin') {

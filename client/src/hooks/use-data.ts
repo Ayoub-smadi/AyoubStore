@@ -83,6 +83,17 @@ export function useUsers() {
   });
 }
 
+export function useParentStudent() {
+  return useQuery({
+    queryKey: [api.parent.student.path],
+    queryFn: async () => {
+      const res = await fetch(api.parent.student.path, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch parent student data");
+      return api.parent.student.responses[200].parse(await res.json());
+    },
+  });
+}
+
 export function useNotifications() {
   return useQuery({
     queryKey: [api.notifications.list.path],

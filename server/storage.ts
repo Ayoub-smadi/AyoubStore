@@ -8,6 +8,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Schools
   getSchools(): Promise<School[]>;
@@ -108,6 +109,14 @@ export class DatabaseStorage implements IStorage {
       totalBuses: allBuses.length,
       activeTrips: activeTripsCount
     };
+  }
+  async deleteUser(id: number): Promise<boolean> {
+    const user = await this.getUser(id);
+    if (user?.username === 'admin') {
+      throw new Error("Cannot delete system administrator");
+    }
+    const result = await db.delete(users).where(eq(users.id, id));
+    return true;
   }
 }
 

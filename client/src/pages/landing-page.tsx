@@ -1,59 +1,62 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Bus, Shield, MapPin, Bell, CheckCircle2, ArrowRight } from "lucide-react";
-import busImg from "@assets/bus-yellow.jpg"; // Assuming I can use a placeholder or the user will provide
+import { Bus, Shield, MapPin, Bell, ArrowRight } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
 
   const features = [
     {
       icon: <MapPin className="h-6 w-6 text-primary" />,
-      title: "Real-time Tracking",
-      description: "Know exactly where the bus is at any moment with GPS accuracy."
+      title: t("features.tracking.title"),
+      description: t("features.tracking.desc")
     },
     {
       icon: <Shield className="h-6 w-6 text-primary" />,
-      title: "Enhanced Safety",
-      description: "Geofence alerts and speed monitoring for a safer journey."
+      title: t("features.safety.title"),
+      description: t("features.safety.desc")
     },
     {
       icon: <Bell className="h-6 w-6 text-primary" />,
-      title: "Instant Notifications",
-      description: "Get alerts when the bus is near your home or the school."
+      title: t("features.alerts.title"),
+      description: t("features.alerts.desc")
     }
   ];
 
   const steps = [
     {
       number: "01",
-      title: "Register Account",
-      description: "Sign up as a parent, driver, or school administrator."
+      title: t("how.step1.title"),
+      description: t("how.step1.desc")
     },
     {
       number: "02",
-      title: "Connect to Bus",
-      description: "Link students to their assigned bus routes and schedules."
+      title: t("how.step2.title"),
+      description: t("how.step2.desc")
     },
     {
       number: "03",
-      title: "Start Tracking",
-      description: "Monitor the journey in real-time through your dashboard."
+      title: t("how.step3.title"),
+      description: t("how.step3.desc")
     }
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
-      <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
+      <nav className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bus className="h-8 w-8 text-[#FACC15]" />
-            <span className="text-2xl font-bold text-primary font-display tracking-tight">RouteSync</span>
+            <span className="text-2xl font-bold text-primary font-display tracking-tight">{t("nav.brand")}</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => setLocation("/login")}>Sign In</Button>
-            <Button className="bg-[#FACC15] text-black hover:bg-[#EAB308] font-bold" onClick={() => setLocation("/login")}>Join Now</Button>
+            <ThemeToggle />
+            <Button variant="ghost" onClick={() => setLocation("/login")}>{t("nav.signin")}</Button>
+            <Button className="bg-[#FACC15] text-black hover:bg-[#EAB308] font-bold" onClick={() => setLocation("/login")}>{t("nav.join")}</Button>
           </div>
         </div>
       </nav>
@@ -63,18 +66,18 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div className="relative z-10">
             <h1 className="text-5xl lg:text-7xl font-extrabold text-primary font-display leading-[1.1] mb-6">
-              Smart & Safe <br />
-              <span className="text-[#FACC15]">School Bus</span> Tracking
+              {t("hero.title").split(" ").slice(0, -2).join(" ")} <br />
+              <span className="text-[#FACC15]">{t("hero.title").split(" ").slice(-2).join(" ")}</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-10 max-w-lg leading-relaxed">
-              The ultimate solution for schools and parents to ensure student safety during every commute. Real-time updates at your fingertips.
+              {t("hero.subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" className="h-14 px-8 text-lg font-bold rounded-xl shadow-xl shadow-primary/20" onClick={() => setLocation("/login")}>
-                Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                {t("hero.getStarted")} <ArrowRight className="ml-2 h-5 w-5 rtl:rotate-180" />
               </Button>
               <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-bold rounded-xl border-2" onClick={() => setLocation("/login")}>
-                Create Account
+                {t("hero.createAccount")}
               </Button>
             </div>
           </div>
@@ -93,12 +96,12 @@ export default function LandingPage() {
       <section className="py-24 bg-secondary/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-5xl font-bold text-primary mb-4">Why Choose RouteSync?</h2>
-            <p className="text-lg text-muted-foreground">Everything you need for efficient transportation management.</p>
+            <h2 className="text-3xl lg:text-5xl font-bold text-primary mb-4">{t("features.title")}</h2>
+            <p className="text-lg text-muted-foreground">{t("features.subtitle")}</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((f, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-border/50 hover:shadow-md transition-shadow">
+              <div key={i} className="bg-card p-8 rounded-2xl shadow-sm border border-border/50 hover:shadow-md transition-shadow">
                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
                   {f.icon}
                 </div>
@@ -114,14 +117,14 @@ export default function LandingPage() {
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-5xl font-bold text-primary mb-4">How It Works</h2>
-            <p className="text-lg text-muted-foreground">Getting started is quick and easy.</p>
+            <h2 className="text-3xl lg:text-5xl font-bold text-primary mb-4">{t("how.title")}</h2>
+            <p className="text-lg text-muted-foreground">{t("how.subtitle")}</p>
           </div>
           <div className="grid md:grid-cols-3 gap-12 relative">
              {/* Connector line (desktop) */}
             <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-border -z-10"></div>
             {steps.map((s, i) => (
-              <div key={i} className="bg-white flex flex-col items-center text-center">
+              <div key={i} className="bg-card flex flex-col items-center text-center p-6 rounded-2xl">
                 <div className="w-16 h-16 bg-[#FACC15] text-black rounded-full flex items-center justify-center text-2xl font-black mb-6 shadow-lg">
                   {s.number}
                 </div>
@@ -138,10 +141,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2">
             <Bus className="h-8 w-8 text-[#FACC15]" />
-            <span className="text-2xl font-bold tracking-tight">RouteSync</span>
+            <span className="text-2xl font-bold tracking-tight">{t("nav.brand")}</span>
           </div>
           <div className="text-center md:text-right">
-            <p className="text-primary-foreground/70 mb-2">© 2026 International School Transport</p>
+            <p className="text-primary-foreground/70 mb-2">{t("footer.rights")}</p>
             <p className="text-primary-foreground/70">123 Education Way, Safety City</p>
           </div>
         </div>

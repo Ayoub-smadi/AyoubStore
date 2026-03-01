@@ -1,15 +1,17 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { ThemeToggle } from "../ui/theme-toggle";
-import { Bell } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
+import { useTranslation } from "@/hooks/use-translation";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const { t, isRtl } = useTranslation();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -33,8 +35,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-4">
               <SidebarTrigger className="hover:bg-secondary/50 rounded-xl w-10 h-10" />
               <div>
-                <h1 className="text-xl font-bold font-display text-foreground">Welcome back, {user.name.split(' ')[0]}</h1>
-                <p className="text-sm text-muted-foreground hidden sm:block">Here's what's happening today.</p>
+                <h1 className="text-xl font-bold font-display text-foreground">
+                  {isRtl ? `مرحباً بك، ${user.name.split(' ')[0]}` : `Welcome back, ${user.name.split(' ')[0]}`}
+                </h1>
+                <p className="text-sm text-muted-foreground hidden sm:block">
+                  {isRtl ? "إليك ما يحدث اليوم." : "Here's what's happening today."}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -42,9 +48,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 variant="ghost" 
                 size="sm" 
                 onClick={() => logout()}
-                className="text-muted-foreground hover:text-destructive transition-colors"
+                className="text-muted-foreground hover:text-destructive transition-colors hidden sm:flex items-center gap-2"
               >
-                Logout
+                <LogOut className="h-4 w-4" />
+                {t("sidebar.logout")}
               </Button>
               <Button variant="ghost" size="icon" className="relative rounded-full w-10 h-10 bg-secondary/50 hover:bg-secondary transition-colors">
                 <Bell className="h-5 w-5 text-foreground/80" />

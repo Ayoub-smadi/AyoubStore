@@ -13,31 +13,33 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
+import { useTranslation } from "@/hooks/use-translation";
 
 export function AppSidebar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
+  const { t } = useTranslation();
 
   const getLinksForRole = () => {
     switch (user?.role) {
       case "admin":
         return [
-          { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-          { title: "Live Map", url: "/admin/map", icon: Map },
-          { title: "Students", url: "/admin/students", icon: Users },
-          { title: "Buses", url: "/admin/buses", icon: Bus },
-          { title: "Settings", url: "/admin/settings", icon: Settings },
+          { title: t("sidebar.dashboard"), url: "/admin", icon: LayoutDashboard },
+          { title: t("sidebar.map"), url: "/admin/map", icon: Map },
+          { title: t("sidebar.students"), url: "/admin/students", icon: Users },
+          { title: t("sidebar.buses"), url: "/admin/buses", icon: Bus },
+          { title: t("sidebar.settings"), url: "/admin/settings", icon: Settings },
         ];
       case "parent":
         return [
-          { title: "Overview", url: "/parent", icon: LayoutDashboard },
-          { title: "Track Bus", url: "/parent/track", icon: Map },
-          { title: "Alerts", url: "/parent/alerts", icon: Bell },
+          { title: t("sidebar.overview"), url: "/parent", icon: LayoutDashboard },
+          { title: t("sidebar.track"), url: "/parent/track", icon: Map },
+          { title: t("sidebar.alerts"), url: "/parent/alerts", icon: Bell },
         ];
       case "driver":
         return [
-          { title: "My Trip", url: "/driver", icon: Map },
-          { title: "Attendance", url: "/driver/attendance", icon: Users },
+          { title: t("sidebar.mytrip"), url: "/driver", icon: Map },
+          { title: t("sidebar.attendance"), url: "/driver/attendance", icon: Users },
         ];
       default:
         return [];
@@ -54,8 +56,8 @@ export function AppSidebar() {
             <Bus className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="text-xl font-bold font-display text-sidebar-foreground">RouteSync</h2>
-            <p className="text-xs text-sidebar-foreground/60 capitalize tracking-wider font-medium">{user?.role} Portal</p>
+            <h2 className="text-xl font-bold font-display text-sidebar-foreground">{t("nav.brand")}</h2>
+            <p className="text-xs text-sidebar-foreground/60 capitalize tracking-wider font-medium">{user?.role} {t("sidebar.portal")}</p>
           </div>
         </div>
       </SidebarHeader>
@@ -63,7 +65,7 @@ export function AppSidebar() {
       <SidebarContent className="px-3">
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-semibold uppercase tracking-wider mb-2">
-            Menu
+            {t("sidebar.menu")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -104,7 +106,7 @@ export function AppSidebar() {
               className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
             >
               <LogOut className="h-5 w-5" />
-              <span>Log out</span>
+              <span>{t("sidebar.logout")}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

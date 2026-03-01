@@ -1,38 +1,63 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { MapPin, UserCheck, Play, Square, Navigation } from "lucide-react";
-
-// Mock data
-const mockStudents = [
-  { id: 1, name: "Emma Thompson", stop: "142 Oak Street", pickedUp: false },
-  { id: 2, name: "Noah Walker", stop: "89 Maple Ave", pickedUp: true },
-  { id: 3, name: "Olivia Davis", stop: "201 Pine Blvd", pickedUp: false },
-];
+import { useAuth } from "@/hooks/use-auth";
+import { useBuses, useUpdateBusLocation, useStudents } from "@/hooks/use-data";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function DriverDashboard() {
+  const { user } = useAuth();
+  const { data: buses } = useBuses();
+  const { data: allStudents } = useStudents();
+  const updateLocation = useUpdateBusLocation();
+  const { t } = useTranslation();
+  
   const [tripActive, setTripActive] = useState(false);
-  const [students, setStudents] = useState(mockStudents);
+  
+  // Find the bus assigned to this driver
+  const myBus = buses?.find(b => b.driverId === user?.id);
+  
+  // Filter students assigned to this bus
+  const myStudents = allStudents?.filter(s => s.busId === myBus?.id) || [];
 
-  const toggleAttendance = (id: number) => {
-    if (!tripActive) return;
-    setStudents(students.map(s => 
-      s.id === id ? { ...s, pickedUp: !s.pickedUp } : s
-    ));
-  };
+  useEffect(() => {
+    let watchId: number;
+    if (tripActive && myBus) {
+      if ("geolocation" in navigator) {
+        watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            updateLocation.mutate({
+              id: myBus.id,
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          (error) => console.error("Error watching location:", error),
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+      }
+    }
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [tripActive, myBus]);
 
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-3xl font-bold font-display text-foreground">Driver Console</h2>
-            <p className="text-muted-foreground mt-1">Manage your current trip and attendance.</p>
+            <h2 className="text-3xl font-bold font-display text-foreground">{t("sidebar.mytrip")}</h2>
+            <p className="text-muted-foreground mt-1">
+              {myBus ? `Bus ${myBus.busNumber}` : "No bus assigned"}
+            </p>
           </div>
           
           <Button 
             onClick={() => setTripActive(!tripActive)}
             size="lg"
+            disabled={!myBus}
             className={`rounded-xl font-bold text-base px-8 shadow-lg hover-elevate transition-all ${
               tripActive 
                 ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/30' 
@@ -53,7 +78,7 @@ export default function DriverDashboard() {
               <div className="w-3 h-3 rounded-full bg-primary animate-ping"></div>
               <p className="font-semibold text-primary">GPS Location Broadcasting Active</p>
             </div>
-            <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/20 rounded-lg">
+            <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/20 rounded-lg" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${myBus?.currentLat},${myBus?.currentLng}`, '_blank')}>
               <Navigation className="w-4 h-4 mr-2" /> Open Maps
             </Button>
           </div>
@@ -66,40 +91,40 @@ export default function DriverDashboard() {
               Passenger Manifest
             </h3>
             <span className="px-3 py-1 bg-background rounded-full text-xs font-bold shadow-sm border border-border/50">
-              {students.filter(s => s.pickedUp).length} / {students.length} On Board
+              {myStudents.length} Students Assigned
             </span>
           </div>
 
           <div className="divide-y divide-border/50">
-            {students.map((student) => (
+            {myStudents.map((student) => (
               <div 
                 key={student.id} 
                 className={`p-5 flex items-center justify-between transition-colors ${!tripActive ? 'opacity-60 grayscale' : 'hover:bg-secondary/10'}`}
               >
                 <div>
-                  <p className={`font-bold text-lg mb-1 ${student.pickedUp ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                    {student.name}
+                  <p className="font-bold text-lg mb-1 text-foreground">
+                    {student.fullName}
                   </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5" />
-                    {student.stop}
+                    Grade {student.grade}
                   </p>
                 </div>
                 
                 <Button
-                  onClick={() => toggleAttendance(student.id)}
                   disabled={!tripActive}
-                  variant={student.pickedUp ? "secondary" : "default"}
-                  className={`rounded-xl h-12 px-6 font-bold transition-all ${
-                    student.pickedUp 
-                      ? 'bg-secondary text-muted-foreground hover:bg-secondary/80' 
-                      : 'bg-primary text-primary-foreground shadow-md shadow-primary/20 hover-elevate'
-                  }`}
+                  variant="default"
+                  className="rounded-xl h-12 px-6 font-bold transition-all bg-primary text-primary-foreground shadow-md shadow-primary/20 hover-elevate"
                 >
-                  {student.pickedUp ? "Cancel" : "Mark Picked Up"}
+                  Mark Picked Up
                 </Button>
               </div>
             ))}
+            {myStudents.length === 0 && (
+              <div className="p-10 text-center text-muted-foreground">
+                No students assigned to this bus.
+              </div>
+            )}
           </div>
         </div>
       </div>

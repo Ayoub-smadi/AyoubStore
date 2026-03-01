@@ -1,89 +1,53 @@
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Bus, UserCheck, Settings } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Users, Bus, Navigation, Activity } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { useBuses, useStats } from "@/hooks/use-data";
+import { useTranslation } from "@/hooks/use-translation";
+import { BusMap } from "@/components/map/bus-map";
 
 export default function AdminDashboard() {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ["/api/stats"],
-  });
+  const { data: stats } = useStats();
+  const { data: buses } = useBuses({ refetchInterval: 5000 });
+  const { t, isRtl } = useTranslation();
 
-  if (isLoading) {
-    return <div className="p-8">Loading dashboard...</div>;
-  }
-
-  const mockChartData = [
-    { name: "Mon", attendance: 95 },
-    { name: "Tue", attendance: 92 },
-    { name: "Wed", attendance: 98 },
-    { name: "Thu", attendance: 90 },
-    { name: "Fri", attendance: 96 },
+  const statCards = [
+    { title: t("sidebar.students"), value: stats?.totalStudents || 0, icon: Users, color: "text-blue-500" },
+    { title: isRtl ? "أولياء الأمور" : "Parents", value: stats?.totalParents || 0, icon: Activity, color: "text-emerald-500" },
+    { title: isRtl ? "السائقين" : "Drivers", value: stats?.totalDrivers || 0, icon: Navigation, color: "text-amber-500" },
+    { title: t("sidebar.buses"), value: stats?.totalBuses || 0, icon: Bus, color: "text-primary" },
   ];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold font-display text-foreground">{t("sidebar.dashboard")}</h2>
+          <p className="text-muted-foreground mt-1">{isRtl ? "نظرة عامة على أسطول الحافلات والطلاب." : "System overview and live fleet tracking."}</p>
+        </div>
         
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalStudents || 0}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Buses</CardTitle>
-              <Bus className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalBuses || 0}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Trips</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.activeTrips || 0}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Drivers</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalDrivers || 0}</div>
-            </CardContent>
-          </Card>
+          {statCards.map((stat, i) => (
+            <Card key={i} className="rounded-2xl border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden group">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{stat.title}</CardTitle>
+                <stat.icon className={`w-5 h-5 ${stat.color} transition-transform group-hover:scale-110`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold font-display">{stat.value}</div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Weekly Attendance Overview</CardTitle>
+        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden">
+          <CardHeader className="bg-secondary/20 border-b border-border/50">
+            <CardTitle className="font-display font-bold flex items-center gap-2">
+              <Activity className="w-5 h-5 text-primary" />
+              {isRtl ? "تتبع الأسطول المباشر" : "Live Fleet Tracking"}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="pl-2">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="attendance" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <CardContent className="p-0 h-[500px] relative z-0">
+            <BusMap buses={buses || []} zoom={13} />
           </CardContent>
         </Card>
       </div>

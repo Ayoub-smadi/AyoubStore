@@ -41,14 +41,16 @@ export function useCreateStudent() {
   });
 }
 
-export function useBuses() {
+export function useBuses(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: [api.buses.list.path],
     queryFn: async () => {
-      const res = await fetch(api.buses.list.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch buses");
-      return api.buses.list.responses[200].parse(await res.json());
+      const res = await fetch(api.stats.get.path, { credentials: "include" }); // Temporary fix if buses list is missing, but let's assume it exists
+      const resBuses = await fetch(api.buses.list.path, { credentials: "include" });
+      if (!resBuses.ok) throw new Error("Failed to fetch buses");
+      return api.buses.list.responses[200].parse(await resBuses.json());
     },
+    ...options
   });
 }
 

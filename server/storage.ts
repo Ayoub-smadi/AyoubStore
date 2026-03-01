@@ -27,6 +27,8 @@ export interface IStorage {
   createStudent(student: InsertStudent): Promise<Student>;
   updateStudentLocation(id: number, lat: number, lng: number): Promise<Student | undefined>;
   linkStudentToBus(id: number, busId: number): Promise<Student | undefined>;
+  getStudentByNumber(studentNumber: string): Promise<Student | undefined>;
+  linkStudentToParent(studentId: number, parentId: number): Promise<Student | undefined>;
   
   // Stats
   getStats(): Promise<{
@@ -53,18 +55,18 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async getSchools(): Promise<School[]> {
-    return await db.select().from(schools);
-  }
-
-  async createBus(insertBus: InsertBus): Promise<Bus> {
-    const [bus] = await db.insert(buses).values(insertBus).returning();
-    return bus;
-  }
-
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const user = await this.getUser(id);
+    if (user?.username === 'admin') {
+      throw new Error("Cannot delete system administrator");
+    }
+    await db.delete(users).where(eq(users.id, id));
+    return true;
   }
 
   async getSchools(): Promise<School[]> {
@@ -78,6 +80,11 @@ export class DatabaseStorage implements IStorage {
 
   async getBuses(): Promise<Bus[]> {
     return await db.select().from(buses);
+  }
+
+  async createBus(insertBus: InsertBus): Promise<Bus> {
+    const [bus] = await db.insert(buses).values(insertBus).returning();
+    return bus;
   }
 
   async deleteBus(id: number): Promise<boolean> {
@@ -99,6 +106,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(buses.id, id))
       .returning();
     return bus;
+  }
+
+  async getStudents(): Promise<Student[]> {
+    return await db.select().from(students);
+  }
+
+  async createStudent(insertStudent: InsertStudent): Promise<Student> {
+    const [student] = await db.insert(students).values(insertStudent).returning();
+    return student;
   }
 
   async updateStudentLocation(id: number, lat: number, lng: number): Promise<Student | undefined> {
@@ -130,11 +146,6 @@ export class DatabaseStorage implements IStorage {
     return student;
   }
 
-  async createStudent(insertStudent: InsertStudent): Promise<Student> {
-    const [student] = await db.insert(students).values(insertStudent).returning();
-    return student;
-  }
-
   async getStats() {
     const allStudents = await db.select().from(students);
     const allUsers = await db.select().from(users);
@@ -152,19 +163,6 @@ export class DatabaseStorage implements IStorage {
       totalBuses: allBuses.length,
       activeTrips: activeTripsCount
     };
-  }
-
-  async getSchools(): Promise<School[]> {
-    return await db.select().from(schools);
-  }
-
-  async deleteUser(id: number): Promise<boolean> {
-    const user = await this.getUser(id);
-    if (user?.username === 'admin') {
-      throw new Error("Cannot delete system administrator");
-    }
-    const result = await db.delete(users).where(eq(users.id, id));
-    return true;
   }
 }
 

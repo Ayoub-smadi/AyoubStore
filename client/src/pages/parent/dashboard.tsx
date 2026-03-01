@@ -91,6 +91,25 @@ export default function ParentDashboard() {
     ? [childBus.currentLat, childBus.currentLng] 
     : [40.7125, -74.0030];
 
+  // Calculate distance if bus location is available
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+  };
+
+  const distance = childBus?.currentLat && childBus?.currentLng 
+    ? calculateDistance(childBus.currentLat, childBus.currentLng, homeLocation[0], homeLocation[1])
+    : null;
+
+  const eta = distance ? Math.round(distance * 3) : null; // Rough estimate: 3 mins per km
+
   return (
     <DashboardLayout>
       <div className="mb-8">
@@ -151,7 +170,7 @@ export default function ParentDashboard() {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-white/80">{isRtl ? "وقت الوصول المتوقع" : "ETA"}</p>
-                    <p className="text-xl font-bold">12:45 PM</p>
+                    <p className="text-xl font-bold">{eta ? `${eta} ${isRtl ? "دقائق" : "mins"}` : "--"}</p>
                   </div>
                 </div>
               </CardContent>
@@ -164,7 +183,7 @@ export default function ParentDashboard() {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">{isRtl ? "المسافة" : "Distance"}</p>
-                    <p className="text-xl font-bold">2.4 km</p>
+                    <p className="text-xl font-bold">{distance ? `${distance.toFixed(1)} km` : "--"}</p>
                   </div>
                 </div>
               </CardContent>

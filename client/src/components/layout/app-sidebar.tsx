@@ -33,8 +33,8 @@ export function AppSidebar() {
       case "parent":
         return [
           { title: t("sidebar.overview"), url: "/parent", icon: LayoutDashboard },
-          { title: t("sidebar.track"), url: "/parent/track", icon: Map },
-          { title: t("sidebar.alerts"), url: "/parent/alerts", icon: Bell },
+          { title: t("sidebar.track"), url: "/parent", icon: Map },
+          { title: t("sidebar.alerts"), url: "/parent", icon: Bell },
         ];
       case "driver":
         return [

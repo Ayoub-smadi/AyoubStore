@@ -30,10 +30,17 @@ export async function registerRoutes(
   app.post(api.auth.register.path, async (req, res) => {
     try {
       const data = api.auth.register.input.parse(req.body);
-      const existing = await storage.getUserByUsername(data.username);
+      
+      // Force role to 'parent' for public registration
+      const registrationData = {
+        ...data,
+        role: 'parent' as const
+      };
+
+      const existing = await storage.getUserByUsername(registrationData.username);
       if (existing) return res.status(400).json({ message: "Username already exists" });
       
-      const user = await storage.createUser(data);
+      const user = await storage.createUser(registrationData);
       res.json(user);
     } catch (e) {
       res.status(400).json({ message: "Invalid registration data" });
@@ -90,6 +97,47 @@ export async function registerRoutes(
       res.json(allStudents);
     } catch (e) {
       res.status(500).json({ message: "Failed to fetch students" });
+    }
+  });
+
+  app.post("/api/users", async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      const existing = await storage.getUserByUsername(data.username);
+      if (existing) return res.status(400).json({ message: "Username already exists" });
+      const user = await storage.createUser(data);
+      res.json(user);
+    } catch (e) {
+      res.status(400).json({ message: "Invalid user data" });
+    }
+  });
+
+  app.post("/api/students/link", async (req, res) => {
+    try {
+      const { studentNumber, parentId } = z.object({ 
+        studentNumber: z.string(), 
+        parentId: z.number() 
+      }).parse(req.body);
+
+      const student = await (storage as any).getStudentByNumber(studentNumber);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      const updated = await (storage as any).linkStudentToParent(student.id, parentId);
+      res.json(updated);
+    } catch (e) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/buses", async (req, res) => {
+    try {
+      const data = insertBusSchema.parse(req.body);
+      const bus = await storage.createBus(data);
+      res.status(201).json(bus);
+    } catch (e) {
+      res.status(400).json({ message: "Invalid bus data" });
     }
   });
 

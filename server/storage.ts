@@ -42,6 +42,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async createBus(insertBus: InsertBus): Promise<Bus> {
+    const [bus] = await db.insert(buses).values(insertBus).returning();
+    return bus;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
@@ -68,8 +73,17 @@ export class DatabaseStorage implements IStorage {
     return bus;
   }
 
-  async getStudents(): Promise<Student[]> {
-    return await db.select().from(students);
+  async getStudentByNumber(studentNumber: string): Promise<Student | undefined> {
+    const [student] = await db.select().from(students).where(eq(students.studentNumber, studentNumber));
+    return student;
+  }
+
+  async linkStudentToParent(studentId: number, parentId: number): Promise<Student | undefined> {
+    const [student] = await db.update(students)
+      .set({ parentId })
+      .where(eq(students.id, studentId))
+      .returning();
+    return student;
   }
 
   async createStudent(insertStudent: InsertStudent): Promise<Student> {

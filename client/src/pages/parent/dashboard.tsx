@@ -1,20 +1,73 @@
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { BusMap } from "@/components/map/bus-map";
-import { Bell, MapPin, Clock, ShieldCheck } from "lucide-react";
+import { Bell, MapPin, Clock, ShieldCheck, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useBuses, useStudents } from "@/hooks/use-data";
 import { useTranslation } from "@/hooks/use-translation";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ParentDashboard() {
   const { user } = useAuth();
   const { t, isRtl } = useTranslation();
   const { data: students } = useStudents();
-  const { data: buses } = useBuses({ refetchInterval: 5000 }); // Poll every 5s for live tracking
+  const { data: buses } = useBuses({ refetchInterval: 5000 });
+  const [studentNumber, setStudentNumber] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Find the parent's child
+  const linkMutation = useMutation({
+    mutationFn: async (number: string) => {
+      await apiRequest("POST", "/api/students/link", { 
+        studentNumber: number, 
+        parentId: user?.id 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      toast({ title: isRtl ? "تم الربط بنجاح" : "Linked successfully" });
+      setStudentNumber("");
+    },
+    onError: () => {
+      toast({ 
+        title: isRtl ? "رقم الطالب غير صحيح" : "Invalid student number", 
+        variant: "destructive" 
+      });
+    }
+  });
+
   const myChild = students?.find(s => s.parentId === user?.id);
   const childBus = buses?.find(b => b.id === myChild?.busId);
+
+  if (!myChild) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-md mx-auto mt-20 text-center space-y-6">
+          <h2 className="text-2xl font-bold">{isRtl ? "ربط حساب الطالب" : "Link Student Account"}</h2>
+          <p className="text-muted-foreground">
+            {isRtl ? "الرجاء إدخال رقم الطالب لربطه بحسابك" : "Please enter student number to link to your account"}
+          </p>
+          <div className="flex gap-2">
+            <Input 
+              placeholder={isRtl ? "رقم الطالب" : "Student Number"} 
+              value={studentNumber}
+              onChange={(e) => setStudentNumber(e.target.value)}
+            />
+            <Button 
+              onClick={() => linkMutation.mutate(studentNumber)}
+              disabled={linkMutation.isPending}
+            >
+              {isRtl ? "ربط" : "Link"}
+            </Button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const homeLocation: [number, number] = myChild?.homeLat && myChild?.homeLng 
     ? [myChild.homeLat, myChild.homeLng] 

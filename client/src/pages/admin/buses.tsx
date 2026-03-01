@@ -1,41 +1,115 @@
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { BusMap } from "@/components/map/bus-map";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-
-// Mock data
-const mockBuses = [
-  { id: 1, busNumber: "B-12", currentLat: 40.7128, currentLng: -74.0060, status: "active", driver: "John Smith", route: "North Suburbs" },
-  { id: 2, busNumber: "B-04", currentLat: 40.7200, currentLng: -74.0100, status: "active", driver: "Sarah Connor", route: "East District" },
-  { id: 3, busNumber: "B-08", currentLat: null, currentLng: null, status: "inactive", driver: "Mike Johnson", route: "West End" },
-];
+import { Plus, Bus as BusIcon } from "lucide-react";
+import { useBuses, useStudents } from "@/hooks/use-data";
+import { useTranslation } from "@/hooks/use-translation";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertBusSchema } from "@shared/schema";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminBuses() {
+  const { data: buses, isLoading } = useBuses();
+  const { t, isRtl } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const createBusMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await apiRequest("POST", "/api/buses", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/buses"] });
+      setOpen(false);
+      toast({ title: isRtl ? "تمت إضافة الحافلة" : "Bus added successfully" });
+    }
+  });
+
+  const form = useForm({
+    resolver: zodResolver(insertBusSchema),
+    defaultValues: {
+      busNumber: "",
+      status: "inactive",
+      schoolId: 1,
+    },
+  });
+
   return (
     <DashboardLayout>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-3xl font-bold font-display text-foreground">Fleet Tracking</h2>
-          <p className="text-muted-foreground mt-1">Live map monitoring and fleet management.</p>
+          <h2 className="text-3xl font-bold font-display text-foreground">{isRtl ? "تتبع الأسطول" : "Fleet Tracking"}</h2>
+          <p className="text-muted-foreground mt-1">{isRtl ? "مراقبة الخريطة الحية وإدارة الأسطول." : "Live map monitoring and fleet management."}</p>
         </div>
-        <Button className="rounded-xl bg-primary hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20 hover-elevate">
-          <Plus className="w-4 h-4 mr-2" /> Register Bus
-        </Button>
+        
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="rounded-xl bg-primary hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20 hover-elevate">
+              <Plus className="w-4 h-4 mr-2" /> {isRtl ? "تسجيل حافلة" : "Register Bus"}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>{isRtl ? "إضافة حافلة جديدة" : "Add New Bus"}</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit((data) => createBusMutation.mutate(data))} className="space-y-4 pt-4">
+                <FormField
+                  control={form.control}
+                  name="busNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{isRtl ? "رقم الحافلة" : "Bus Number"}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={createBusMutation.isPending}>
+                  {createBusMutation.isPending ? (isRtl ? "جاري الإضافة..." : "Adding...") : (isRtl ? "إضافة" : "Add")}
+                </Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
         {/* Map View */}
         <div className="lg:col-span-2 rounded-2xl overflow-hidden shadow-sm relative z-0">
-          <BusMap buses={mockBuses} />
+          <BusMap buses={buses || []} />
         </div>
 
         {/* List View */}
         <div className="bg-card rounded-2xl border border-border/50 shadow-sm flex flex-col overflow-hidden">
           <div className="p-4 border-b border-border/50 bg-secondary/20 font-bold font-display">
-            Active Fleet Status
+            {isRtl ? "حالة الأسطول النشط" : "Active Fleet Status"}
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {mockBuses.map((bus) => (
+            {buses?.map((bus) => (
               <div key={bus.id} className="p-4 rounded-xl border border-border/50 hover:border-primary/50 transition-colors bg-background">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold font-display text-lg text-foreground">{bus.busNumber}</h4>
@@ -45,16 +119,20 @@ export default function AdminBuses() {
                   </span>
                 </div>
                 <div className="space-y-1 text-sm text-muted-foreground">
-                  <p><span className="font-semibold text-foreground/80">Driver:</span> {bus.driver}</p>
-                  <p><span className="font-semibold text-foreground/80">Route:</span> {bus.route}</p>
+                  <p><span className="font-semibold text-foreground/80">{isRtl ? "السائق:" : "Driver:"}</span> {bus.driverId ? `ID: ${bus.driverId}` : (isRtl ? "غير معين" : "Not Assigned")}</p>
                 </div>
                 {bus.status === 'active' && (
                   <Button variant="ghost" size="sm" className="w-full mt-3 bg-primary/5 text-primary hover:bg-primary/15 font-semibold rounded-lg">
-                    Focus on Map
+                    {isRtl ? "التركيز على الخريطة" : "Focus on Map"}
                   </Button>
                 )}
               </div>
             ))}
+            {buses?.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                {isRtl ? "لا توجد حافلات." : "No buses found."}
+              </div>
+            )}
           </div>
         </div>
       </div>

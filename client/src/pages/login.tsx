@@ -124,19 +124,8 @@ export default function Login() {
                   <Label htmlFor="reg-password">{t("login.password")}</Label>
                   <Input id="reg-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-role">{t("login.role")}</Label>
-                  <select 
-                    id="reg-role" 
-                    value={role} 
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="parent">{t("login.parent")}</option>
-                    <option value="driver">{t("login.driver")}</option>
-                    <option value="admin">{t("login.admin")}</option>
-                  </select>
-                </div>
+                {/* Role selection removed for public registration - default to parent */}
+                <input type="hidden" value="parent" />
                 <Button type="submit" disabled={isRegistering} className="w-full h-12 rounded-xl bg-gradient-to-r from-primary to-indigo-600 mt-4">
                   {isRegistering ? t("login.creating") : t("login.register")}
                 </Button>

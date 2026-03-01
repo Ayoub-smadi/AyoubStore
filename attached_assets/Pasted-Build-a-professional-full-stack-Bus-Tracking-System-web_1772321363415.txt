@@ -1,0 +1,149 @@
+Build a professional full-stack Bus Tracking System web application.
+
+Tech Stack:
+Frontend: React.js (with Vite) + Tailwind CSS + React Router + Axios
+Backend: Node.js + Express.js
+Database: MongoDB (Mongoose)
+Authentication: JWT (Role-Based Access Control)
+Maps: Google Maps API (or OpenStreetMap if free alternative needed)
+Real-time updates: Socket.io
+
+System Name:
+Smart School Bus Tracking System
+
+User Roles:
+1) Admin
+2) Parent
+3) Driver
+
+---------------------------------------------------
+🔐 AUTHENTICATION & AUTHORIZATION
+---------------------------------------------------
+- Secure registration and login system using JWT.
+- Password hashing using bcrypt.
+- Role-based access control (Admin / Parent / Driver).
+- Protected routes on frontend and backend.
+- Refresh token support.
+
+---------------------------------------------------
+👨‍💼 ADMIN DASHBOARD FEATURES
+---------------------------------------------------
+Admin must have a professional dashboard with charts and statistics.
+
+Admin Capabilities:
+- Login securely.
+- Dashboard statistics:
+    - Total Students
+    - Total Parents
+    - Total Drivers
+    - Total Buses
+    - Active Trips
+- CRUD operations:
+    - Add/Edit/Delete Students
+    - Add/Edit/Delete Parents
+    - Add/Edit/Delete Drivers
+    - Add/Edit/Delete Buses
+- Assign student to bus.
+- Assign driver to bus.
+- Generate reports (monthly & yearly).
+- View live bus locations on map.
+- Notification system.
+- Manage school info and system settings.
+
+---------------------------------------------------
+👨‍👩‍👦 PARENT FEATURES
+---------------------------------------------------
+- Parent registration & login.
+- Add child using Student Number.
+- Link child account to parent account.
+- View:
+    - Bus number
+    - Driver name
+    - Estimated arrival time
+- Live tracking map:
+    - Track bus from home to school.
+    - Track bus from school to home.
+- Receive notifications:
+    - Bus arrived.
+    - Bus delayed.
+- View trip history.
+- Update profile.
+
+---------------------------------------------------
+🚌 DRIVER FEATURES
+---------------------------------------------------
+- Secure login.
+- Start trip / End trip.
+- Update live location every 10 seconds.
+- View assigned students.
+- Emergency button (notify admin & parents).
+
+---------------------------------------------------
+📍 MAP & TRACKING SYSTEM
+---------------------------------------------------
+- Show real-time bus location on map.
+- Calculate distance between bus and student home.
+- Show estimated time of arrival (ETA).
+- Use markers for:
+    - School
+    - Bus
+    - Student home
+- Auto-refresh location.
+
+---------------------------------------------------
+📊 UI/UX REQUIREMENTS
+---------------------------------------------------
+- Modern and professional UI.
+- Responsive design.
+- Dark/Light mode.
+- Sidebar dashboard layout.
+- Charts using Chart.js.
+- Smooth animations.
+- Loading states & error handling.
+
+---------------------------------------------------
+🗂 DATABASE STRUCTURE (MongoDB)
+---------------------------------------------------
+Collections:
+- Users (Admin, Parent, Driver)
+- Students
+- Buses
+- Trips
+- Notifications
+
+Each Student must have:
+- studentNumber (unique)
+- fullName
+- grade
+- homeLocation (lat, lng)
+- assignedBus
+
+Each Bus must have:
+- busNumber
+- driver
+- currentLocation
+- status
+
+---------------------------------------------------
+🔔 EXTRA PROFESSIONAL FEATURES
+---------------------------------------------------
+- Email verification.
+- Password reset.
+- Activity logs.
+- Role middleware.
+- API documentation (Swagger).
+- Clean folder structure.
+- Environment variables support.
+- Error handling middleware.
+- Deployment ready.
+
+---------------------------------------------------
+🎯 Deliverables:
+- Complete working frontend and backend.
+- Clear folder structure.
+- Sample data for testing.
+- README file with setup instructions.
+- .env example file.
+
+The system must be production-ready and scalable.
+Use clean architecture and best practices.

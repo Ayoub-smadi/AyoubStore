@@ -268,6 +268,8 @@ export default function AdminStudents() {
             <div className="flex-1 rounded-xl overflow-hidden relative border border-border">
               <BusMap 
                 buses={[]} 
+                center={selectedStudent?.homeLat && selectedStudent?.homeLng ? [selectedStudent.homeLat, selectedStudent.homeLng] : [24.7136, 46.6753]}
+                homeLocation={selectedStudent?.homeLat && selectedStudent?.homeLng ? [selectedStudent.homeLat, selectedStudent.homeLng] : undefined}
                 onMapClick={(lat, lng) => {
                   if (selectedStudent) {
                     updateLocationMutation.mutate({ id: selectedStudent.id, lat, lng });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { Bus, Home, School } from "lucide-react";
 import "leaflet/dist/leaflet.css";
@@ -42,9 +42,10 @@ interface BusMapProps {
   showGeofence?: boolean;
   homeLocation?: [number, number];
   schoolLocation?: [number, number];
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
-export function BusMap({ buses, center = [40.7128, -74.0060], zoom = 13, showGeofence = false, homeLocation, schoolLocation }: BusMapProps) {
+export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeofence = false, homeLocation, schoolLocation, onMapClick }: BusMapProps) {
   // Fix for React Leaflet SSR issues
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -52,6 +53,17 @@ export function BusMap({ buses, center = [40.7128, -74.0060], zoom = 13, showGeo
   }, []);
 
   if (!mounted) return <div className="w-full h-full bg-muted rounded-xl animate-pulse"></div>;
+
+  const MapEvents = () => {
+    const map = useMapEvents({
+      click(e) {
+        if (onMapClick) {
+          onMapClick(e.latlng.lat, e.latlng.lng);
+        }
+      },
+    });
+    return null;
+  };
 
   const polyline = (homeLocation && schoolLocation) ? [schoolLocation, homeLocation] : [];
 
@@ -67,6 +79,7 @@ export function BusMap({ buses, center = [40.7128, -74.0060], zoom = 13, showGeo
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" // Clean, modern tile theme
         />
         
+        <MapEvents />
         {buses.map(bus => {
           if (!bus.currentLat || !bus.currentLng) return null;
           return (

@@ -29,34 +29,44 @@ export default function DriverDashboard() {
     ? [myStudents[0].homeLat, myStudents[0].homeLng]
     : [31.97, 35.93];
 
+  const [route, setRoute] = useState<[number, number][]>([]);
+
   useEffect(() => {
-    if (tripActive && myBus) {
+    if (homeLocation && schoolLocation) {
+      fetch(`https://router.project-osrm.org/route/v1/driving/${schoolLocation[1]},${schoolLocation[0]};${homeLocation[1]},${homeLocation[0]}?overview=full&geometries=geojson`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.routes && data.routes[0]) {
+            const coords = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]] as [number, number]);
+            setRoute(coords);
+          }
+        });
+    }
+  }, [homeLocation[0], homeLocation[1], schoolLocation[0], schoolLocation[1]]);
+
+  useEffect(() => {
+    if (tripActive && myBus && route.length > 0) {
       let step = 0;
-      const totalSteps = 20; // Number of steps to reach student
+      const totalSteps = route.length;
       
       simulationIntervalRef.current = setInterval(() => {
         step = (step + 1) % (totalSteps * 2);
         
-        let currentLat, currentLng;
-        
-        if (step <= totalSteps) {
-          // Moving from school to home
-          const progress = step / totalSteps;
-          currentLat = schoolLocation[0] + (homeLocation[0] - schoolLocation[0]) * progress;
-          currentLng = schoolLocation[1] + (homeLocation[1] - schoolLocation[1]) * progress;
+        let currentPos;
+        if (step < totalSteps) {
+          // Moving forward
+          currentPos = route[step];
         } else {
-          // Moving from home back to school
-          const progress = (step - totalSteps) / totalSteps;
-          currentLat = homeLocation[0] + (schoolLocation[0] - homeLocation[0]) * progress;
-          currentLng = homeLocation[1] + (schoolLocation[1] - homeLocation[1]) * progress;
+          // Moving backward
+          currentPos = route[totalSteps * 2 - 1 - step];
         }
 
         updateLocation.mutate({
           id: myBus.id,
-          lat: currentLat,
-          lng: currentLng
+          lat: currentPos[0],
+          lng: currentPos[1]
         });
-      }, 4000);
+      }, 2000);
     } else {
       if (simulationIntervalRef.current) {
         clearInterval(simulationIntervalRef.current);
@@ -68,7 +78,17 @@ export default function DriverDashboard() {
         clearInterval(simulationIntervalRef.current);
       }
     };
-  }, [tripActive, myBus]);
+  }, [tripActive, myBus, route]);
+
+  const handleMapClick = (lat: number, lng: number) => {
+    if (myBus) {
+      updateLocation.mutate({
+        id: myBus.id,
+        lat,
+        lng
+      });
+    }
+  };
 
   const mapCenter: [number, number] = myBus?.currentLat && myBus?.currentLng 
     ? [myBus.currentLat, myBus.currentLng] 
@@ -112,6 +132,7 @@ export default function DriverDashboard() {
                 zoom={13}
                 homeLocation={homeLocation}
                 schoolLocation={schoolLocation}
+                onMapClick={handleMapClick}
               />
             </div>
 

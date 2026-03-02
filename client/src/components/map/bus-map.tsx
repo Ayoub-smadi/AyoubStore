@@ -65,7 +65,26 @@ export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeof
     return null;
   };
 
-  const polyline = (homeLocation && schoolLocation) ? [schoolLocation, homeLocation] : [];
+  const [route, setRoute] = useState<[number, number][]>([]);
+
+  useEffect(() => {
+    if (homeLocation && schoolLocation) {
+      // Fetch route from OSRM
+      fetch(`https://router.project-osrm.org/route/v1/driving/${schoolLocation[1]},${schoolLocation[0]};${homeLocation[1]},${homeLocation[0]}?overview=full&geometries=geojson`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.routes && data.routes[0]) {
+            const coords = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]] as [number, number]);
+            setRoute(coords);
+          } else {
+            setRoute([schoolLocation, homeLocation]);
+          }
+        })
+        .catch(() => setRoute([schoolLocation, homeLocation]));
+    } else {
+      setRoute([]);
+    }
+  }, [homeLocation, schoolLocation]);
 
   return (
     <div className="w-full h-full rounded-xl overflow-hidden border border-border/50 shadow-md">
@@ -109,8 +128,8 @@ export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeof
           </Marker>
         )}
 
-        {polyline.length > 0 && (
-          <Polyline positions={polyline} color="#6366f1" weight={3} dashArray="10, 10" />
+        {route.length > 0 && (
+          <Polyline positions={route} color="#6366f1" weight={4} opacity={0.7} />
         )}
 
         {showGeofence && homeLocation && (

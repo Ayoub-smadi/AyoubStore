@@ -48,24 +48,11 @@ interface BusMapProps {
 export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeofence = false, homeLocation, schoolLocation, onMapClick }: BusMapProps) {
   // Fix for React Leaflet SSR issues
   const [mounted, setMounted] = useState(false);
+  const [route, setRoute] = useState<[number, number][]>([]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  if (!mounted) return <div className="w-full h-full bg-muted rounded-xl animate-pulse"></div>;
-
-  const MapEvents = () => {
-    const map = useMapEvents({
-      click(e) {
-        if (onMapClick) {
-          onMapClick(e.latlng.lat, e.latlng.lng);
-        }
-      },
-    });
-    return null;
-  };
-
-  const [route, setRoute] = useState<[number, number][]>([]);
 
   useEffect(() => {
     if (homeLocation && schoolLocation) {
@@ -85,6 +72,10 @@ export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeof
       setRoute([]);
     }
   }, [homeLocation, schoolLocation]);
+
+  if (!mounted) return <div className="w-full h-full bg-muted rounded-xl animate-pulse"></div>;
+
+  const MapEvents = () => {
 
   return (
     <div className="w-full h-full rounded-xl overflow-hidden border border-border/50 shadow-md">

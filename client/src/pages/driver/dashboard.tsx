@@ -30,9 +30,11 @@ export default function DriverDashboard() {
     : [31.97, 35.93];
 
   const [route, setRoute] = useState<[number, number][]>([]);
+  const [loadingRoute, setLoadingRoute] = useState(false);
 
   useEffect(() => {
     if (homeLocation && schoolLocation) {
+      setLoadingRoute(true);
       fetch(`https://router.project-osrm.org/route/v1/driving/${schoolLocation[1]},${schoolLocation[0]};${homeLocation[1]},${homeLocation[0]}?overview=full&geometries=geojson`)
         .then(res => res.json())
         .then(data => {
@@ -40,7 +42,8 @@ export default function DriverDashboard() {
             const coords = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]] as [number, number]);
             setRoute(coords);
           }
-        });
+        })
+        .finally(() => setLoadingRoute(false));
     }
   }, [homeLocation[0], homeLocation[1], schoolLocation[0], schoolLocation[1]]);
 

@@ -165,7 +165,7 @@ export async function registerRoutes(
 
   app.get("/api/users", async (req, res) => {
     try {
-      const allUsers = await (storage as any).getUsers();
+      const allUsers = await storage.getUsers();
       res.json(allUsers);
     } catch (e) {
       res.status(500).json({ message: "Failed to fetch users" });
@@ -178,9 +178,19 @@ export async function registerRoutes(
       const existing = await storage.getUserByUsername(data.username);
       if (existing) return res.status(400).json({ message: "Username already exists" });
       const user = await storage.createUser(data);
-      res.json(user);
+      res.status(201).json(user);
     } catch (e) {
       res.status(400).json({ message: "Invalid user data" });
+    }
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      await storage.deleteUser(id);
+      res.status(204).send();
+    } catch (e) {
+      res.status(500).json({ message: "Failed to delete user" });
     }
   });
 

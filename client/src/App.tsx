@@ -13,6 +13,7 @@ import Login from "./pages/login";
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminStudents from "./pages/admin/students";
 import AdminBuses from "./pages/admin/buses";
+import AdminUsers from "./pages/admin/users";
 import ParentDashboard from "./pages/parent/dashboard";
 import DriverDashboard from "./pages/driver/dashboard";
 
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/students" component={AdminStudents} />
       <Route path="/admin/buses" component={AdminBuses} />
+      <Route path="/admin/users" component={AdminUsers} />
       
       {/* Parent Routes */}
       <Route path="/parent" component={ParentDashboard} />

@@ -25,7 +25,8 @@ export function AppSidebar() {
       case "admin":
         return [
           { title: t("sidebar.dashboard"), url: "/admin", icon: LayoutDashboard },
-          { title: t("sidebar.map"), url: "/admin/map", icon: Map },
+          { title: t("sidebar.map"), url: "/admin", icon: Map },
+          { title: isRtl ? "المستخدمين" : "Users", url: "/admin/users", icon: Users },
           { title: t("sidebar.students"), url: "/admin/students", icon: Users },
           { title: t("sidebar.buses"), url: "/admin/buses", icon: Bus },
           { title: t("sidebar.settings"), url: "/admin/settings", icon: Settings },

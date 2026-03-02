@@ -31,11 +31,14 @@ export default function DriverDashboard() {
 
   const [route, setRoute] = useState<[number, number][]>([]);
   const [loadingRoute, setLoadingRoute] = useState(false);
+  const [customHomeLocation, setCustomHomeLocation] = useState<[number, number] | null>(null);
+
+  const effectiveHomeLocation = customHomeLocation || homeLocation;
 
   useEffect(() => {
-    if (homeLocation && schoolLocation) {
+    if (effectiveHomeLocation && schoolLocation) {
       setLoadingRoute(true);
-      fetch(`https://router.project-osrm.org/route/v1/driving/${schoolLocation[1]},${schoolLocation[0]};${homeLocation[1]},${homeLocation[0]}?overview=full&geometries=geojson`)
+      fetch(`https://router.project-osrm.org/route/v1/driving/${schoolLocation[1]},${schoolLocation[0]};${effectiveHomeLocation[1]},${effectiveHomeLocation[0]}?overview=full&geometries=geojson`)
         .then(res => res.json())
         .then(data => {
           if (data.routes && data.routes[0]) {
@@ -45,7 +48,7 @@ export default function DriverDashboard() {
         })
         .finally(() => setLoadingRoute(false));
     }
-  }, [homeLocation[0], homeLocation[1], schoolLocation[0], schoolLocation[1]]);
+  }, [effectiveHomeLocation[0], effectiveHomeLocation[1], schoolLocation[0], schoolLocation[1]]);
 
   useEffect(() => {
     if (tripActive && myBus && route.length > 0) {
@@ -84,7 +87,9 @@ export default function DriverDashboard() {
   }, [tripActive, myBus, route]);
 
   const handleMapClick = (lat: number, lng: number) => {
-    if (myBus) {
+    if (!tripActive) {
+      setCustomHomeLocation([lat, lng]);
+    } else if (myBus) {
       updateLocation.mutate({
         id: myBus.id,
         lat,
@@ -133,11 +138,19 @@ export default function DriverDashboard() {
                 buses={myBus ? [myBus] : []} 
                 center={mapCenter} 
                 zoom={13}
-                homeLocation={homeLocation}
+                homeLocation={effectiveHomeLocation}
                 schoolLocation={schoolLocation}
                 onMapClick={handleMapClick}
               />
             </div>
+
+            {!tripActive && (
+              <div className="bg-secondary/30 border border-border/50 rounded-2xl p-4 flex items-center justify-between">
+                <p className="text-sm font-medium">
+                  {isRtl ? "اضغط على الخريطة لتحديد وجهة الطالب (سيتم رسم المسار تلقائياً)" : "Click on the map to set the student's destination (route will be drawn automatically)"}
+                </p>
+              </div>
+            )}
 
             {tripActive && (
               <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between animate-in slide-in-from-top-4 fade-in">

@@ -85,11 +85,13 @@ export default function ParentDashboard() {
 
   const homeLocation: [number, number] = myChild?.homeLat && myChild?.homeLng 
     ? [myChild.homeLat, myChild.homeLng] 
-    : [40.7100, -74.0010];
+    : [31.97, 35.93];
+
+  const schoolLocation: [number, number] = [31.95, 35.91];
 
   const mapCenter: [number, number] = childBus?.currentLat && childBus?.currentLng 
     ? [childBus.currentLat, childBus.currentLng] 
-    : [40.7125, -74.0030];
+    : schoolLocation;
 
   // Calculate distance if bus location is available
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -210,6 +212,7 @@ export default function ParentDashboard() {
               zoom={14} 
               showGeofence={true}
               homeLocation={homeLocation}
+              schoolLocation={schoolLocation}
             />
           </div>
           

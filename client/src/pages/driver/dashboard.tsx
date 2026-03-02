@@ -1,52 +1,83 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { MapPin, UserCheck, Play, Square, Navigation } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useBuses, useUpdateBusLocation, useStudents } from "@/hooks/use-data";
 import { useTranslation } from "@/hooks/use-translation";
+import { BusMap } from "@/components/map/bus-map";
 
 export default function DriverDashboard() {
   const { user } = useAuth();
   const { data: buses } = useBuses();
   const { data: allStudents } = useStudents();
   const updateLocation = useUpdateBusLocation();
-  const { t } = useTranslation();
+  const { t, isRtl } = useTranslation();
   
   const [tripActive, setTripActive] = useState(false);
+  const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Find the bus assigned to this driver
   const myBus = buses?.find(b => b.driverId === user?.id);
   
   // Filter students assigned to this bus
   const myStudents = allStudents?.filter(s => s.busId === myBus?.id) || [];
+  
+  // Mock school location
+  const schoolLocation: [number, number] = [31.95, 35.91]; // Amman coordinates
+  const homeLocation: [number, number] = myStudents[0]?.homeLat && myStudents[0]?.homeLng 
+    ? [myStudents[0].homeLat, myStudents[0].homeLng]
+    : [31.97, 35.93];
 
   useEffect(() => {
-    let watchId: number;
     if (tripActive && myBus) {
-      if ("geolocation" in navigator) {
-        watchId = navigator.geolocation.watchPosition(
-          (position) => {
-            updateLocation.mutate({
-              id: myBus.id,
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-          },
-          (error) => console.error("Error watching location:", error),
-          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-        );
+      let step = 0;
+      const totalSteps = 20; // Number of steps to reach student
+      
+      simulationIntervalRef.current = setInterval(() => {
+        step = (step + 1) % (totalSteps * 2);
+        
+        let currentLat, currentLng;
+        
+        if (step <= totalSteps) {
+          // Moving from school to home
+          const progress = step / totalSteps;
+          currentLat = schoolLocation[0] + (homeLocation[0] - schoolLocation[0]) * progress;
+          currentLng = schoolLocation[1] + (homeLocation[1] - schoolLocation[1]) * progress;
+        } else {
+          // Moving from home back to school
+          const progress = (step - totalSteps) / totalSteps;
+          currentLat = homeLocation[0] + (schoolLocation[0] - homeLocation[0]) * progress;
+          currentLng = homeLocation[1] + (schoolLocation[1] - homeLocation[1]) * progress;
+        }
+
+        updateLocation.mutate({
+          id: myBus.id,
+          lat: currentLat,
+          lng: currentLng
+        });
+      }, 4000);
+    } else {
+      if (simulationIntervalRef.current) {
+        clearInterval(simulationIntervalRef.current);
       }
     }
+    
     return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (simulationIntervalRef.current) {
+        clearInterval(simulationIntervalRef.current);
+      }
     };
   }, [tripActive, myBus]);
 
+  const mapCenter: [number, number] = myBus?.currentLat && myBus?.currentLng 
+    ? [myBus.currentLat, myBus.currentLng] 
+    : schoolLocation;
+
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold font-display text-foreground">{t("sidebar.mytrip")}</h2>
             <p className="text-muted-foreground mt-1">
@@ -65,66 +96,74 @@ export default function DriverDashboard() {
             }`}
           >
             {tripActive ? (
-              <><Square className="w-5 h-5 mr-2 fill-current" /> End Trip</>
+              <><Square className="w-5 h-5 mr-2 fill-current" /> {isRtl ? "إيقاف الرحلة" : "End Trip"}</>
             ) : (
-              <><Play className="w-5 h-5 mr-2 fill-current" /> Start Route</>
+              <><Play className="w-5 h-5 mr-2 fill-current" /> {isRtl ? "بدأ الرحلة" : "Start Route"}</>
             )}
           </Button>
         </div>
 
-        {tripActive && (
-          <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 mb-8 flex items-center justify-between animate-in slide-in-from-top-4 fade-in">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-primary animate-ping"></div>
-              <p className="font-semibold text-primary">GPS Location Broadcasting Active</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="rounded-2xl overflow-hidden shadow-sm border border-border/50 h-[400px] relative z-0">
+              <BusMap 
+                buses={myBus ? [myBus] : []} 
+                center={mapCenter} 
+                zoom={13}
+                homeLocation={homeLocation}
+                schoolLocation={schoolLocation}
+              />
             </div>
-            <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/20 rounded-lg" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${myBus?.currentLat},${myBus?.currentLng}`, '_blank')}>
-              <Navigation className="w-4 h-4 mr-2" /> Open Maps
-            </Button>
-          </div>
-        )}
 
-        <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-border/50 flex items-center justify-between bg-secondary/20">
-            <h3 className="font-bold font-display text-lg flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-primary" />
-              Passenger Manifest
-            </h3>
-            <span className="px-3 py-1 bg-background rounded-full text-xs font-bold shadow-sm border border-border/50">
-              {myStudents.length} Students Assigned
-            </span>
-          </div>
-
-          <div className="divide-y divide-border/50">
-            {myStudents.map((student) => (
-              <div 
-                key={student.id} 
-                className={`p-5 flex items-center justify-between transition-colors ${!tripActive ? 'opacity-60 grayscale' : 'hover:bg-secondary/10'}`}
-              >
-                <div>
-                  <p className="font-bold text-lg mb-1 text-foreground">
-                    {student.fullName}
-                  </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5" />
-                    Grade {student.grade}
-                  </p>
+            {tripActive && (
+              <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between animate-in slide-in-from-top-4 fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-primary animate-ping"></div>
+                  <p className="font-semibold text-primary">{isRtl ? "البث المباشر للموقع نشط" : "GPS Location Broadcasting Active"}</p>
                 </div>
-                
-                <Button
-                  disabled={!tripActive}
-                  variant="default"
-                  className="rounded-xl h-12 px-6 font-bold transition-all bg-primary text-primary-foreground shadow-md shadow-primary/20 hover-elevate"
-                >
-                  Mark Picked Up
-                </Button>
-              </div>
-            ))}
-            {myStudents.length === 0 && (
-              <div className="p-10 text-center text-muted-foreground">
-                No students assigned to this bus.
               </div>
             )}
+          </div>
+
+          <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-border/50 flex items-center justify-between bg-secondary/20">
+              <h3 className="font-bold font-display text-lg flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-primary" />
+                {isRtl ? "قائمة الطلاب" : "Passenger Manifest"}
+              </h3>
+            </div>
+
+            <div className="divide-y divide-border/50 flex-1 overflow-auto">
+              {myStudents.map((student) => (
+                <div 
+                  key={student.id} 
+                  className={`p-5 flex flex-col gap-3 transition-colors ${!tripActive ? 'opacity-60 grayscale' : 'hover:bg-secondary/10'}`}
+                >
+                  <div>
+                    <p className="font-bold text-lg mb-1 text-foreground">
+                      {student.fullName}
+                    </p>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5" />
+                      {isRtl ? `الصف: ${student.grade}` : `Grade ${student.grade}`}
+                    </p>
+                  </div>
+                  
+                  <Button
+                    disabled={!tripActive}
+                    variant="default"
+                    className="rounded-xl h-10 px-4 font-bold transition-all bg-primary text-primary-foreground shadow-md shadow-primary/20 hover-elevate w-full"
+                  >
+                    {isRtl ? "تم الركوب" : "Mark Picked Up"}
+                  </Button>
+                </div>
+              ))}
+              {myStudents.length === 0 && (
+                <div className="p-10 text-center text-muted-foreground">
+                  {isRtl ? "لا يوجد طلاب معينين" : "No students assigned to this bus."}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

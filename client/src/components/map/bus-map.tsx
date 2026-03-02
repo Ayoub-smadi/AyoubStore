@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import { Bus, Home, School } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
-// Custom icons
 const createCustomIcon = (color: string) => {
   return L.divIcon({
     className: "custom-leaflet-icon",
@@ -16,7 +14,7 @@ const createCustomIcon = (color: string) => {
   });
 };
 
-const busIcon = createCustomIcon("#6366f1"); // Primary blue
+const busIcon = createCustomIcon("#6366f1");
 const homeIcon = L.divIcon({
   className: "custom-home-icon",
   html: `<div style="background-color: #10b981; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: 2px solid white;">
@@ -45,8 +43,18 @@ interface BusMapProps {
   onMapClick?: (lat: number, lng: number) => void;
 }
 
+function MapClickHandler({ onMapClick }: { onMapClick?: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      if (onMapClick) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
+  return null;
+}
+
 export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeofence = false, homeLocation, schoolLocation, onMapClick }: BusMapProps) {
-  // Fix for React Leaflet SSR issues
   const [mounted, setMounted] = useState(false);
   const [route, setRoute] = useState<[number, number][]>([]);
 
@@ -56,7 +64,6 @@ export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeof
 
   useEffect(() => {
     if (homeLocation && schoolLocation) {
-      // Fetch route from OSRM
       fetch(`https://router.project-osrm.org/route/v1/driving/${schoolLocation[1]},${schoolLocation[0]};${homeLocation[1]},${homeLocation[0]}?overview=full&geometries=geojson`)
         .then(res => res.json())
         .then(data => {
@@ -75,21 +82,20 @@ export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeof
 
   if (!mounted) return <div className="w-full h-full bg-muted rounded-xl animate-pulse"></div>;
 
-  const MapEvents = () => {
-
   return (
     <div className="w-full h-full rounded-xl overflow-hidden border border-border/50 shadow-md">
-      <MapContainer 
-        center={center} 
-        zoom={zoom} 
+      <MapContainer
+        center={center}
+        zoom={zoom}
         style={{ width: '100%', height: '100%', zIndex: 1 }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" // Clean, modern tile theme
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
-        
-        <MapEvents />
+
+        <MapClickHandler onMapClick={onMapClick} />
+
         {buses.map(bus => {
           if (!bus.currentLat || !bus.currentLng) return null;
           return (
@@ -109,13 +115,13 @@ export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeof
 
         {homeLocation && (
           <Marker position={homeLocation} icon={homeIcon}>
-             <Popup>Home</Popup>
+            <Popup>Home</Popup>
           </Marker>
         )}
 
         {schoolLocation && (
           <Marker position={schoolLocation} icon={schoolIcon}>
-             <Popup>School</Popup>
+            <Popup>School</Popup>
           </Marker>
         )}
 
@@ -124,10 +130,10 @@ export function BusMap({ buses, center = [24.7136, 46.6753], zoom = 13, showGeof
         )}
 
         {showGeofence && homeLocation && (
-          <Circle 
-            center={homeLocation} 
-            pathOptions={{ color: '#10b981', fillColor: '#10b981', fillOpacity: 0.1, weight: 2, dashArray: '5, 5' }} 
-            radius={1000} // 1km geofence
+          <Circle
+            center={homeLocation}
+            pathOptions={{ color: '#10b981', fillColor: '#10b981', fillOpacity: 0.1, weight: 2, dashArray: '5, 5' }}
+            radius={1000}
           />
         )}
       </MapContainer>

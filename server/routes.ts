@@ -101,6 +101,25 @@ export async function registerRoutes(
     }
   });
 
+  app.post(api.students.create.path, async (req, res) => {
+    try {
+      const schoolsList = await storage.getSchools();
+      const defaultSchoolId = schoolsList.length > 0 ? schoolsList[0].id : 1;
+
+      const data = insertStudentSchema.parse({
+        ...req.body,
+        schoolId: req.body.schoolId || defaultSchoolId,
+        homeLat: req.body.homeLat || 31.95,
+        homeLng: req.body.homeLng || 35.91
+      });
+      const student = await storage.createStudent(data);
+      res.status(201).json(student);
+    } catch (e) {
+      console.error("Error creating student:", e);
+      res.status(400).json({ message: "Invalid student data" });
+    }
+  });
+
   app.patch("/api/students/:id/location", async (req, res) => {
     try {
       const id = Number(req.params.id);

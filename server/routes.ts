@@ -207,9 +207,12 @@ export async function registerRoutes(
 
   app.post("/api/buses", async (req, res) => {
     try {
+      const schoolsList = await storage.getSchools();
+      const defaultSchoolId = schoolsList.length > 0 ? schoolsList[0].id : 1;
+
       const data = insertBusSchema.parse({
         ...req.body,
-        schoolId: req.body.schoolId || 1,
+        schoolId: req.body.schoolId || defaultSchoolId,
         status: req.body.status || 'inactive',
         currentLat: req.body.currentLat || 31.95,
         currentLng: req.body.currentLng || 35.91

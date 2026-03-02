@@ -3,6 +3,18 @@ import { log } from "./index";
 
 export async function seed() {
   try {
+    // Ensure at least one school exists
+    const schoolsList = await storage.getSchools();
+    if (schoolsList.length === 0) {
+      await storage.createSchool({
+        name: "Default School",
+        address: "123 Education St",
+        lat: 31.95,
+        lng: 35.91,
+      });
+      log("Default school created successfully", "seed");
+    }
+
     const admin = await storage.getUserByUsername("admin");
     if (!admin) {
       await storage.createUser({

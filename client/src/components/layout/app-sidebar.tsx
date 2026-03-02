@@ -18,7 +18,7 @@ import { useTranslation } from "@/hooks/use-translation";
 export function AppSidebar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
-  const { t } = useTranslation();
+  const { t, isRtl } = useTranslation();
 
   const getLinksForRole = () => {
     switch (user?.role) {

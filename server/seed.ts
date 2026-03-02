@@ -1,9 +1,9 @@
 import { storage } from "./storage";
 import { log } from "./index";
+import { hashPassword } from "./auth";
 
 export async function seed() {
   try {
-    // Ensure at least one school exists
     const schoolsList = await storage.getSchools();
     if (schoolsList.length === 0) {
       await storage.createSchool({
@@ -17,9 +17,10 @@ export async function seed() {
 
     const admin = await storage.getUserByUsername("admin");
     if (!admin) {
+      const hashedPassword = await hashPassword("admin123");
       await storage.createUser({
         username: "admin",
-        password: "admin123",
+        password: hashedPassword,
         role: "admin",
         name: "System Administrator",
         email: "admin@routesync.com",

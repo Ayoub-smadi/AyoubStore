@@ -78,6 +78,8 @@ export default function AdminBuses() {
       busNumber: "",
       status: "inactive",
       schoolId: 1,
+      currentLat: 31.95,
+      currentLng: 35.91,
     },
   });
 

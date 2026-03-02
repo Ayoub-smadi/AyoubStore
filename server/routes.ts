@@ -207,10 +207,17 @@ export async function registerRoutes(
 
   app.post("/api/buses", async (req, res) => {
     try {
-      const data = insertBusSchema.parse(req.body);
+      const data = insertBusSchema.parse({
+        ...req.body,
+        schoolId: req.body.schoolId || 1,
+        status: req.body.status || 'inactive',
+        currentLat: req.body.currentLat || 31.95,
+        currentLng: req.body.currentLng || 35.91
+      });
       const bus = await storage.createBus(data);
       res.status(201).json(bus);
     } catch (e) {
+      console.error("Error creating bus:", e);
       res.status(400).json({ message: "Invalid bus data" });
     }
   });
